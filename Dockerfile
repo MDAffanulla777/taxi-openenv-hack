@@ -8,7 +8,7 @@ ENV PYTHONUNBUFFERED=1
 # Create app directory
 WORKDIR /app
 
-# Install OS dependencies (if needed later)
+# Install OS dependencies (if needed)
 RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
@@ -20,8 +20,10 @@ COPY . .
 RUN pip install --upgrade pip
 
 # Install dependencies
-# If you have a requirements.txt, uncomment the next line:
 RUN pip install -r requirements.txt
+
+# Required for HuggingFace Spaces
+ENV PORT=7860
 
 # Expose port for Gradio
 EXPOSE 7860
