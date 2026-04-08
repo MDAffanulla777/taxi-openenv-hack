@@ -1,0 +1,6 @@
+FROM python:3.11-slim
+WORKDIR /app
+COPY . .
+RUN pip install gradio gymnasium numpy torch
+EXPOSE 7860
+CMD ["python", "demo.py"]
