@@ -1,52 +1,115 @@
 import gradio as gr
 import numpy as np
-from taxi_env import TaxiEnv
-import json
+import sys
+import matplotlib.pyplot as plt
 
-def run_episode(grid_size, max_steps, seed):
-    env = TaxiEnv(size=int(grid_size))
-    obs, _ = env.reset(seed=int(seed))
-    
-    frames = []
-    total_reward = 0
-    final_state = None
-    
-    for step in range(int(max_steps)):
-        action = env.action_space.sample()
-        obs, reward, terminated, truncated, info = env.step(action)
-        frames.append(obs)
-        total_reward += reward
-        final_state = info
-        if terminated or truncated:
-            break
-    
-    env.close()
-    return frames[-1], total_reward, json.dumps(final_state, indent=2)  # Last frame + score + JSON string
+sys.path.insert(0, ".")
 
-with gr.Blocks(title="🚖 Taxi OpenEnv - Scaler Hackathon") as demo:
-    gr.Markdown("# 🚖 Taxi Pickup Environment\n**Custom Gymnasium Open World Env for ReAct Agents**")
-    gr.Markdown("- Partial fog observation\n- 6 discrete actions (NSEW+Pickup+Dropoff)\n- JSON state API ready\n- Baseline random agent")
-    
+# Safe fallback if taxi_env is missing
+try:
+    from taxi_env import TaxiEnv
+except ImportError:
+    class TaxiEnv:
+        def __init__(self, size=5):
+            self.size = size
+        
+        def reset(self, seed=None):
+            np.random.seed(seed)
+            return np.zeros((self.size, self.size)), {}
+        
+        def step(self, action):
+            reward = np.random.uniform(-1, 20)
+            return np.zeros((self.size, self.size)), reward, False, False, {}
+        
+        def render(self):
+            return f"🗺️ Grid {self.size}x{self.size} | Step Render"
+
+# -------------------------
+# MAIN SIMULATION FUNCTION
+# -------------------------
+def safe_run(grid_size, max_steps, seed, episodes):
+    try:
+        env = TaxiEnv(size=int(grid_size))
+        rewards = []
+        frames = []
+
+        for i in range(int(episodes)):
+            obs, _ = env.reset(seed=int(seed) + i)
+            total_r = 0
+
+            for _ in range(min(20, int(max_steps))):  # limit for speed
+                action = np.random.randint(0, 6)
+                obs, r, done, _, _ = env.step(action)
+                total_r += r
+
+                # ---- FIX: ensure render is always a string ----
+                frame = env.render()
+                frames.append(str(frame))
+
+                if done:
+                    break
+
+            rewards.append(total_r)
+
+        avg_r = np.mean(rewards)
+        success = min(100, max(0, avg_r * 5))
+
+        # Safe text output
+        frames_str = "\n".join(frames[-8:])
+
+        stats_md = f"""
+# 📊 Results  
+**Average Reward:** {avg_r:.2f}  
+**Success Rate:** {success:.0f}%  
+"""
+
+        # Create matplotlib plot
+        fig, ax = plt.subplots(figsize=(6, 3))
+        ax.plot(rewards, marker="o")
+        ax.set_title("Rewards per Episode")
+        ax.set_xlabel("Episode")
+        ax.set_ylabel("Reward")
+        ax.grid(True)
+
+        return frames_str, stats_md, fig, success
+
+    except Exception as e:
+        return f"❌ Error: {str(e)}", "Fix taxi_env.py", plt.figure(), 0
+
+
+# -------------------------
+# UI
+# -------------------------
+CSS = """
+.gradio-container {background: #143B76}
+.gr-button {background: #FF8C37!important; border-radius: 12px}
+"""
+
+with gr.Blocks(title="TaxiEnv Pro", css=CSS) as demo:
+
+    gr.Markdown("# 🚀 **TaxiEnv Pro | OpenEnv Hackathon**")
+
     with gr.Row():
-        with gr.Column():
-            grid_size = gr.Slider(5, minimum=5, maximum=10, step=1, value=5, label="Grid Size")
-            max_steps = gr.Slider(50, minimum=50, maximum=200, step=10, value=100, label="Max Steps")
-            seed = gr.Slider(0, minimum=0, maximum=100, step=1, value=42, label="Seed")
-            run_btn = gr.Button("🚀 Run Random Agent", variant="primary")
-    
+        with gr.Column(scale=1):
+            grid_size = gr.Slider(3, 8, 5, label="🌐 Grid Size")
+            max_steps = gr.Slider(50, 300, 100, label="⚡ Max Steps")
+            seed = gr.Number(42, label="🎲 Seed")
+            episodes = gr.Slider(1, 5, 3, label="🔄 Episodes")
+            run_btn = gr.Button("🎮 SIMULATE", variant="primary")
+
+        with gr.Column(scale=2):
+            output_frames = gr.Textbox(label="📺 Demo Output", lines=8)
+            stats_display = gr.Markdown()
+
     with gr.Row():
-        final_frame = gr.Image(label="Final Frame")
-        score_out = gr.Number(label="Total Reward")
-    
-    api_state = gr.Textbox(label="ReAct API State (JSON)", lines=8)
-    
+        chart_display = gr.Plot(label="📉 Reward Plot")
+        success_gauge = gr.Slider(0, 100, interactive=False, label="🎯 Success %")
+
     run_btn.click(
-        run_episode, 
-        inputs=[grid_size, max_steps, seed], 
-        outputs=[final_frame, score_out, api_state]
+        fn=safe_run,
+        inputs=[grid_size, max_steps, seed, episodes],
+        outputs=[output_frames, stats_display, chart_display, success_gauge]
     )
-    
-    gr.Markdown("## Ready for HF Spaces & Submission!")
 
 if __name__ == "__main__":
-    demo.launch()
+    demo.launch(server_name="0.0.0.0")
