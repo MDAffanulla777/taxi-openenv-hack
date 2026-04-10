@@ -32,14 +32,14 @@ def home():
 @app.post("/reset")
 def reset_env():
     obs, info = env.reset()
-    return {"observation": obs.tolist(), "info": info}
+    return {"obs": obs.tolist(), "info": info}   # FIXED KEY NAME
 
 
 @app.post("/step")
 def step_env(data: StepInput):
     obs, reward, terminated, truncated, info = env.step(data.action)
     return {
-        "observation": obs.tolist(),
+        "obs": obs.tolist(),        # FIXED KEY NAME
         "reward": float(reward),
         "terminated": bool(terminated),
         "truncated": bool(truncated),
