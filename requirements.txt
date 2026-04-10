@@ -3,3 +3,5 @@ gymnasium==0.29.1
 numpy
 torch
 matplotlib==3.8.4
+fastapi
+uvicorn
