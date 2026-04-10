@@ -1,10 +1,12 @@
-title: TaxiEnv - Trident Team
+---
+title: TaxiEnv Demo
 emoji: 🚖
 colorFrom: yellow
-colorTo: blue
+colorTo: green
 sdk: docker
-app_file: app.py
 pinned: false
+app_file: app.py
+---
 🚖 TaxiEnv – Custom Open Environment (Scaler Hackathon)
 This project implements a custom Taxi environment compatible with OpenAI Gym–style APIs and exposed using FastAPI.
 It is deployed on HuggingFace Spaces for evaluation.
