@@ -1,3 +1,2 @@
 id: taxi-env
-type: gym
-entry_point: taxi_env:TaxiEnv
+type: docker
