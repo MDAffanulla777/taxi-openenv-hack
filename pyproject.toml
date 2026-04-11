@@ -6,10 +6,13 @@ build-backend = "setuptools.build_meta"
 name = "taxi-env"
 version = "0.1.0"
 description = "Taxi OpenEnv environment"
-authors = [{ name = "Mohammed Affanulla" }]
-readme = "README.md"
+authors = [{ name = "Team Trident" }]
 requires-python = ">=3.8"
 
-[project.dependencies]
-gym = "*"
-numpy = "*"
+dependencies = [
+    "numpy",
+    "openenv>=0.2.0"
+]
+
+[project.scripts]
+server = "app:app"
