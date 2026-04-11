@@ -3,9 +3,10 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from taxi_env import TaxiEnv
 
-app = FastAPI()
+# 🔥 Rename from app → api (IMPORTANT)
+api = FastAPI()
 
-app.add_middleware(
+api.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
@@ -19,18 +20,18 @@ class StepInput(BaseModel):
     action: int
 
 
-@app.get("/")
+@api.get("/")
 def home():
     return {"status": "OK"}
 
 
-@app.post("/reset")
+@api.post("/reset")
 def reset():
     obs, info = env.reset()
     return {"obs": obs.tolist(), "info": info}
 
 
-@app.post("/step")
+@api.post("/step")
 def step(data: StepInput):
     obs, reward, terminated, truncated, info = env.step(data.action)
     return {
@@ -44,9 +45,10 @@ def step(data: StepInput):
 
 # 🔥 REQUIRED BY OPENENV
 def main():
-    return app
+    return api
 
 
+# 🔥 Required for Docker/local run
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=7860)
+    uvicorn.run(api, host="0.0.0.0", port=7860)
