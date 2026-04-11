@@ -1,4 +1,3 @@
 id: taxi-env
 type: gym
 entry_point: taxi_env:TaxiEnv
-description: "Taxi-v3 OpenAI Gym style environment"
